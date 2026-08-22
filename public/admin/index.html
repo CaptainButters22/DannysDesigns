@@ -7,7 +7,56 @@
     <meta name="theme-color" content="#202b28">
     <link rel="icon" href="/assets/mark.svg" type="image/svg+xml">
     <link rel="stylesheet" href="/assets/styles.css">
-    <title>Site Admin | Danny's Designs</title>
+    <title>Admin Console | Danny's Designs</title>
+    <style>
+      .status-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.95rem;
+        border-radius: 999px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        margin: 0.75rem 0;
+      }
+      .status-tag .dot {
+        width: 0.6rem;
+        height: 0.6rem;
+        border-radius: 50%;
+        display: inline-block;
+      }
+      .status-checking { background: #eef1f0; color: #445; }
+      .status-checking .dot { background: #99a; animation: pulse 1.2s infinite; }
+      .status-online { background: #e3f6e8; color: #17603a; }
+      .status-online .dot { background: #22a35a; }
+      .status-offline { background: #fdeaea; color: #8f1f1f; }
+      .status-offline .dot { background: #d43c3c; }
+      @keyframes pulse { 50% { opacity: 0.35; } }
+      .gateway-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+      .gateway-btn {
+        display: inline-block;
+        padding: 0.7rem 1.4rem;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+      .gateway-btn.primary { background: #202b28; color: #fff; }
+      .gateway-btn.primary[aria-disabled="true"] { opacity: 0.45; pointer-events: none; }
+      .gateway-btn.secondary { background: #eef1f0; color: #202b28; }
+      .offline-note {
+        display: none;
+        background: #fdeaea;
+        border: 1px solid #f3c1c1;
+        border-radius: 10px;
+        padding: 1rem 1.25rem;
+        margin-top: 1rem;
+        color: #6c1a1a;
+      }
+      .offline-note strong { display: block; margin-bottom: 0.25rem; }
+    </style>
   </head>
   <body class="admin-body">
     <main class="admin-shell">
@@ -16,52 +65,75 @@
           <img src="/assets/mark.svg" alt="" width="42" height="42">
           <span>Danny's <strong>Designs</strong></span>
         </a>
-        <span class="admin-badge">Site admin</span>
+        <span class="admin-badge">Admin console</span>
       </header>
       <section class="admin-intro">
         <p class="eyebrow">Welcome back</p>
-        <h1>Manage Danny's Designs</h1>
-        <p>This site's source and publishing settings are managed securely through GitHub. Sign in there to update content or deployment settings.</p>
-      </section>
-      <section class="admin-grid" aria-label="Administration links">
-        <a class="admin-card primary-card" href="https://github.com/CaptainButters22/DannysDesigns">
-          <span class="admin-icon" aria-hidden="true">⌘</span>
-          <span>
-            <strong>Edit website</strong>
-            <small>Open the site repository on GitHub</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <a class="admin-card" href="https://github.com/CaptainButters22/DannysDesigns/actions">
-          <span class="admin-icon" aria-hidden="true">✓</span>
-          <span>
-            <strong>Deployments</strong>
-            <small>View build and publishing activity</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <a class="admin-card" href="https://github.com/CaptainButters22/DannysDesigns/settings/pages">
-          <span class="admin-icon" aria-hidden="true">◎</span>
-          <span>
-            <strong>Domain settings</strong>
-            <small>Manage GitHub Pages and HTTPS</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
-        <a class="admin-card" href="https://dannydesigns.shop/">
-          <span class="admin-icon" aria-hidden="true">◇</span>
-          <span>
-            <strong>View the shop</strong>
-            <small>Open Danny's live shirt storefront</small>
-          </span>
-          <span aria-hidden="true">↗</span>
-        </a>
+        <h1>Admin console</h1>
+        <p>Sign in with your master password and 4-digit admin code to manage every website, its data, and its managers.</p>
+        <span id="status-tag" class="status-tag status-checking" role="status">
+          <span class="dot"></span>
+          <span id="status-text">Checking server&hellip;</span>
+        </span>
+        <div class="gateway-actions">
+          <a id="open-admin" class="gateway-btn primary" href="https://api.dannysdesigns.com/admin" aria-disabled="true">Open admin console</a>
+          <button id="retry-btn" class="gateway-btn secondary" type="button">Check again</button>
+        </div>
+        <div id="offline-note" class="offline-note">
+          <strong>Server offline</strong>
+          The data server is not reachable right now, so the admin console cannot be opened.
+          Start the Website Data Server and the tunnel on the host machine, then press "Check again."
+        </div>
       </section>
       <aside class="admin-note">
         <strong>Secure by design</strong>
-        <p>No customer data or credentials are stored on this page. GitHub handles authentication for website administration.</p>
+        <p>The admin console requires the master password plus the 4-digit code set in the local server app. Five failed attempts lock web access until it is unlocked locally. Source managed at <a href="https://github.com/CaptainButters22/DannysDesigns">CaptainButters22/DannysDesigns</a>.</p>
       </aside>
-      <a class="text-link admin-back" href="/">← Back to the website</a>
+      <a class="text-link admin-back" href="/">&larr; Back to the website</a>
     </main>
+    <script>
+      (function () {
+        var HEALTH_URL = "https://api.dannysdesigns.com/health";
+        var ADMIN_URL = "https://api.dannysdesigns.com/admin";
+        var tag = document.getElementById("status-tag");
+        var text = document.getElementById("status-text");
+        var openBtn = document.getElementById("open-admin");
+        var note = document.getElementById("offline-note");
+        var retry = document.getElementById("retry-btn");
+        var redirected = false;
+
+        function setState(state, label) {
+          tag.className = "status-tag status-" + state;
+          text.textContent = label;
+        }
+
+        function check(autoRedirect) {
+          setState("checking", "Checking server\u2026");
+          note.style.display = "none";
+          openBtn.setAttribute("aria-disabled", "true");
+          var controller = new AbortController();
+          var timer = setTimeout(function () { controller.abort(); }, 6000);
+          fetch(HEALTH_URL, { signal: controller.signal, cache: "no-store" })
+            .then(function (res) {
+              clearTimeout(timer);
+              if (!res.ok) { throw new Error("bad status"); }
+              setState("online", "Server online");
+              openBtn.removeAttribute("aria-disabled");
+              if (autoRedirect && !redirected) {
+                redirected = true;
+                window.location.href = ADMIN_URL;
+              }
+            })
+            .catch(function () {
+              clearTimeout(timer);
+              setState("offline", "Server offline");
+              note.style.display = "block";
+            });
+        }
+
+        retry.addEventListener("click", function () { check(true); });
+        check(true);
+      })();
+    </script>
   </body>
 </html>
