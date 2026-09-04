@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import worker, { buildAdminOriginUrl, isAdminPath } from "../admin-proxy.js";
+import worker, {
+  buildAdminOriginUrl,
+  isAdminPath,
+  normalizeUnsafeOrigin,
+} from "../admin-proxy.js";
 
 test("matches only the admin path boundary", () => {
   assert.equal(isAdminPath("/admin"), true);
@@ -43,6 +47,37 @@ test("refuses to construct an upstream URL for non-admin paths", () => {
   );
 });
 
+test("normalizes only equivalent origins on unsafe methods", () => {
+  const equivalentOrigin = new Headers({
+    Origin: "https://dannysdesigns.com:443",
+  });
+  normalizeUnsafeOrigin(equivalentOrigin, "POST");
+  assert.equal(equivalentOrigin.get("origin"), "https://dannysdesigns.com");
+
+  const hostileOrigin = new Headers({ Origin: "https://attacker.example" });
+  normalizeUnsafeOrigin(hostileOrigin, "DELETE");
+  assert.equal(hostileOrigin.get("origin"), "https://attacker.example");
+
+  const originWithPath = new Headers({
+    Origin: "https://dannysdesigns.com/admin",
+  });
+  normalizeUnsafeOrigin(originWithPath, "POST");
+  assert.equal(originWithPath.get("origin"), "https://dannysdesigns.com/admin");
+
+  const missingOrigin = new Headers();
+  normalizeUnsafeOrigin(missingOrigin, "PATCH");
+  assert.equal(missingOrigin.has("origin"), false);
+
+  const safeRequestOrigin = new Headers({
+    Origin: "https://dannysdesigns.com:443",
+  });
+  normalizeUnsafeOrigin(safeRequestOrigin, "GET");
+  assert.equal(
+    safeRequestOrigin.get("origin"),
+    "https://dannysdesigns.com:443",
+  );
+});
+
 test("proxy preserves request and response semantics", async () => {
   const originalFetch = globalThis.fetch;
   let capturedRequest;
@@ -68,9 +103,12 @@ test("proxy preserves request and response semantics", async () => {
           Authorization: "Bearer test-token",
           Cookie: "existing=value",
           "Content-Type": "application/x-www-form-urlencoded",
+          Origin: "https://dannysdesigns.com:443",
+          "X-Admin-Proxy-Secret": "client-supplied-value",
         },
         body: "username=maintainer",
       }),
+      { ADMIN_PROXY_SECRET: "worker-secret" },
     );
 
     assert.equal(
@@ -81,8 +119,13 @@ test("proxy preserves request and response semantics", async () => {
     assert.equal(await capturedRequest.text(), "username=maintainer");
     assert.equal(capturedRequest.headers.get("authorization"), "Bearer test-token");
     assert.equal(capturedRequest.headers.get("cookie"), "existing=value");
+    assert.equal(
+      capturedRequest.headers.get("x-admin-proxy-secret"),
+      "worker-secret",
+    );
     assert.equal(capturedRequest.headers.get("x-forwarded-host"), "dannysdesigns.com");
     assert.equal(capturedRequest.headers.get("x-forwarded-proto"), "https");
+    assert.equal(capturedRequest.headers.get("origin"), "https://dannysdesigns.com");
     assert.equal(capturedOptions.redirect, "manual");
     assert.equal(response.status, 303);
     assert.equal(response.headers.get("location"), "/admin/dashboard");
@@ -93,4 +136,13 @@ test("proxy preserves request and response semantics", async () => {
   } finally {
     globalThis.fetch = originalFetch;
   }
+});
+
+test("fails closed when the Worker secret is unavailable", async () => {
+  const response = await worker.fetch(
+    new Request("https://dannysdesigns.com/admin"),
+    {},
+  );
+
+  assert.equal(response.status, 500);
 });

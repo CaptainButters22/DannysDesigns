@@ -26,7 +26,7 @@ The Worker in `worker/` proxies only `https://dannysdesigns.com/admin` and
 `https://api.dannysdesigns.com`. All other paths continue directly to GitHub
 Pages because they are outside the Worker's route bindings. The proxy keeps the
 HTTP method, query string, body, headers, redirect response, cookies, and status
-code. It has no secrets or environment variables.
+code. Its proxy secret is stored only as a Cloudflare Worker secret.
 
 Run the route and URL tests with:
 
@@ -41,16 +41,32 @@ npm test
 2. Authenticate Wrangler with `npx wrangler login`, or set a local/CI
    `CLOUDFLARE_API_TOKEN` that can edit Workers Scripts and Workers Routes for
    the zone. Do not commit the token.
-3. Run `npm ci`, then `npm run deploy:worker`.
-4. In **Workers & Pages > dannys-designs-admin-proxy > Settings > Domains &
+3. Generate one strong random `ADMIN_PROXY_SECRET` and configure the identical
+   value in the Flask server environment and the Worker. With the value already
+   stored in the current user's environment, upload it without printing it:
+
+   ```powershell
+   [Environment]::GetEnvironmentVariable("ADMIN_PROXY_SECRET", "User") |
+       npx wrangler secret put ADMIN_PROXY_SECRET --config worker/wrangler.toml
+   ```
+
+   Never place this value in `wrangler.toml`, source code, or GitHub Pages.
+4. Run `npm ci`, then `npm run deploy:worker`.
+5. In **Workers & Pages > dannys-designs-admin-proxy > Settings > Domains &
    Routes**, verify both routes exist:
    `dannysdesigns.com/admin` and `dannysdesigns.com/admin/*`.
-5. Request `/`, `/assets/styles.css`, and `/admin`; the first two should remain
+6. Request `/`, `/assets/styles.css`, and `/admin`; the first two should remain
    GitHub Pages responses, while `/admin` should return the Flask console.
 
 The checked-in `worker/wrangler.toml` creates the two route bindings during
 deployment. Do not add a catch-all `dannysdesigns.com/*` route: that would put
 the Worker in front of the rest of the GitHub Pages site.
+
+The Worker sends the server-required `X-Admin-Proxy-Secret`,
+`X-Forwarded-Host: dannysdesigns.com`, and `X-Forwarded-Proto: https` headers.
+For unsafe methods it canonicalizes an equivalent same-origin `Origin` header
+to `https://dannysdesigns.com`; missing, malformed, or cross-origin values are
+left unchanged so the Flask server rejects them.
 
 ### Protect the admin console with Cloudflare Access
 
