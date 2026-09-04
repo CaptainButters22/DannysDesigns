@@ -70,11 +70,14 @@ with its query string preserved; nested paths such as `/admin/users/` continue
 to proxy unchanged.
 For unsafe methods, the Worker sets the private
 `X-Admin-Public-Origin: https://dannysdesigns.com` attestation only when the
-browser sends that exact `Origin`, or when `Origin` is absent and
-`Sec-Fetch-Site` is exactly `same-origin`. It removes every client-supplied
-attestation first. Cross-origin, malformed, or unclassified unsafe requests
-receive `403` at the edge and are never forwarded. Safe methods are forwarded
-without the attestation.
+browser sends that exact `Origin` or does not provide a usable HTTP(S) origin,
+as can happen in embedded browsers and webviews. It removes every
+client-supplied attestation first. An explicit well-formed HTTP(S) origin other
+than `https://dannysdesigns.com` receives `403` at the edge and is never
+forwarded. When browser origin metadata is unavailable, Flask's signed session
+cookie and per-session CSRF token are the authoritative cross-site protection;
+the server validates CSRF on every unsafe admin request. Safe methods are
+forwarded without the attestation.
 
 ### Protect the admin console with Cloudflare Access
 

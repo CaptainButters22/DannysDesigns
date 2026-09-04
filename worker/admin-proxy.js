@@ -34,12 +34,15 @@ export function attestUnsafeRequest(headers, method) {
   }
 
   const origin = headers.get("Origin");
-  if (origin) {
-    if (origin !== SITE_ORIGIN) {
-      return false;
+  if (origin && origin !== SITE_ORIGIN) {
+    try {
+      const parsedOrigin = new URL(origin);
+      if (parsedOrigin.protocol === "http:" || parsedOrigin.protocol === "https:") {
+        return false;
+      }
+    } catch {
+      // Embedded browsers may provide unavailable or non-standard origin metadata.
     }
-  } else if (headers.get("Sec-Fetch-Site") !== "same-origin") {
-    return false;
   }
 
   headers.set("X-Admin-Public-Origin", SITE_ORIGIN);

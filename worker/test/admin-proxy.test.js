@@ -72,29 +72,35 @@ test("attests an unsafe request with an exact public Origin", () => {
   );
 });
 
-test("attests an unsafe request using same-origin Fetch Metadata", () => {
-  const headers = new Headers({
-    "Sec-Fetch-Site": "same-origin",
-  });
-
-  assert.equal(attestUnsafeRequest(headers, "PATCH"), true);
-  assert.equal(
-    headers.get("x-admin-public-origin"),
-    "https://dannysdesigns.com",
-  );
+test("attests embedded browser requests with unavailable Origin metadata", () => {
+  for (const headers of [
+    new Headers(),
+    new Headers({ Origin: "null" }),
+    new Headers({ Origin: "app://admin-shell" }),
+    new Headers({
+      "Sec-Fetch-Site": "none",
+      "X-Admin-Public-Origin": "https://attacker.example",
+    }),
+  ]) {
+    assert.equal(attestUnsafeRequest(headers, "PATCH"), true);
+    assert.equal(
+      headers.get("x-admin-public-origin"),
+      "https://dannysdesigns.com",
+    );
+  }
 });
 
-test("rejects unsafe cross-site, malformed, and unknown requests", () => {
-  for (const headers of [
-    new Headers({
-      Origin: "https://attacker.example",
-      "Sec-Fetch-Site": "same-origin",
-      "X-Admin-Public-Origin": "https://dannysdesigns.com",
-    }),
-    new Headers({ Origin: "not-an-origin" }),
-    new Headers({ "Sec-Fetch-Site": "cross-site" }),
-    new Headers(),
+test("rejects explicit cross-origin HTTP and HTTPS origins", () => {
+  for (const origin of [
+    "http://dannysdesigns.com",
+    "https://attacker.example",
+    "https://dannysdesigns.com.evil.example",
   ]) {
+    const headers = new Headers({
+      Origin: origin,
+      "X-Admin-Public-Origin": "https://dannysdesigns.com",
+    });
+
     assert.equal(attestUnsafeRequest(headers, "DELETE"), false);
     assert.equal(headers.has("x-admin-public-origin"), false);
   }
@@ -109,7 +115,7 @@ test("removes client attestation from safe methods", () => {
   assert.equal(headers.has("x-admin-public-origin"), false);
 });
 
-test("does not accept a non-exact same-origin value", () => {
+test("rejects a non-exact HTTP origin value", () => {
   const headers = new Headers({
     Origin: "https://dannysdesigns.com:443",
   });
@@ -319,6 +325,47 @@ test("rejects an unsafe request before it reaches the origin", async () => {
 
     assert.equal(response.status, 403);
     assert.equal(fetchCalled, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("forwards an embedded browser POST with attestation intact", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedRequest;
+  globalThis.fetch = async (request) => {
+    capturedRequest = request;
+    return new Response("invalid credentials", { status: 200 });
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://dannysdesigns.com/admin", {
+        method: "POST",
+        headers: {
+          Cookie: "website_data_session=signed-value",
+          "Content-Type": "application/x-www-form-urlencoded",
+          Origin: "null",
+          "X-Admin-Public-Origin": "https://attacker.example",
+        },
+        body: "csrf_token=valid&password=wrong&code=0000",
+      }),
+      { ADMIN_PROXY_SECRET: "worker-secret" },
+    );
+
+    assert.equal(
+      capturedRequest.headers.get("cookie"),
+      "website_data_session=signed-value",
+    );
+    assert.equal(
+      capturedRequest.headers.get("x-admin-public-origin"),
+      "https://dannysdesigns.com",
+    );
+    assert.equal(
+      await capturedRequest.text(),
+      "csrf_token=valid&password=wrong&code=0000",
+    );
+    assert.equal(response.status, 200);
   } finally {
     globalThis.fetch = originalFetch;
   }
