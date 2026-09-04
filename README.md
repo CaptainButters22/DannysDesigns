@@ -53,12 +53,13 @@ npm test
    Never place this value in `wrangler.toml`, source code, or GitHub Pages.
 4. Run `npm ci`, then `npm run deploy:worker`.
 5. In **Workers & Pages > dannys-designs-admin-proxy > Settings > Domains &
-   Routes**, verify both routes exist:
-   `dannysdesigns.com/admin` and `dannysdesigns.com/admin/*`.
+   Routes**, verify the `dannysdesigns.com/admin*` route exists. Cloudflare
+   requires the wildcard for the exact `/admin` path to invoke the Worker; the
+   Worker itself rejects paths outside the `/admin` boundary.
 6. Request `/`, `/assets/styles.css`, and `/admin`; the first two should remain
    GitHub Pages responses, while `/admin` should return the Flask console.
 
-The checked-in `worker/wrangler.toml` creates the two route bindings during
+The checked-in `worker/wrangler.toml` creates this narrowly scoped route during
 deployment. Do not add a catch-all `dannysdesigns.com/*` route: that would put
 the Worker in front of the rest of the GitHub Pages site.
 
