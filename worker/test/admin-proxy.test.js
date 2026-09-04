@@ -3,6 +3,7 @@ import test from "node:test";
 
 import worker, {
   buildAdminOriginUrl,
+  buildCanonicalAdminUrl,
   isAdminPath,
   normalizeUnsafeOrigin,
 } from "../admin-proxy.js";
@@ -37,6 +38,17 @@ test("preserves encoded path components", () => {
   assert.equal(
     upstreamUrl.href,
     "https://api.dannysdesigns.com/admin/search/a%2Fb?q=red%20blue",
+  );
+});
+
+test("canonical admin URL removes only the trailing slash", () => {
+  const canonicalUrl = buildCanonicalAdminUrl(
+    "https://dannysdesigns.com/admin/?next=%2Fadmin%2Fusers",
+  );
+
+  assert.equal(
+    canonicalUrl.href,
+    "https://dannysdesigns.com/admin?next=%2Fadmin%2Fusers",
   );
 });
 
@@ -145,4 +157,50 @@ test("fails closed when the Worker secret is unavailable", async () => {
   );
 
   assert.equal(response.status, 500);
+});
+
+test("redirects exact trailing-slash admin URL before proxying", async () => {
+  const originalFetch = globalThis.fetch;
+  let fetchCalled = false;
+  globalThis.fetch = async () => {
+    fetchCalled = true;
+    return new Response();
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://dannysdesigns.com/admin/?next=%2Fadmin%2Fusers"),
+      {},
+    );
+
+    assert.equal(response.status, 308);
+    assert.equal(
+      response.headers.get("location"),
+      "https://dannysdesigns.com/admin?next=%2Fadmin%2Fusers",
+    );
+    assert.equal(fetchCalled, false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("continues to proxy nested admin paths", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedUrl;
+  globalThis.fetch = async (request) => {
+    capturedUrl = request.url;
+    return new Response("proxied");
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://dannysdesigns.com/admin/users/?page=2"),
+      { ADMIN_PROXY_SECRET: "worker-secret" },
+    );
+
+    assert.equal(capturedUrl, "https://api.dannysdesigns.com/admin/users/?page=2");
+    assert.equal(await response.text(), "proxied");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

@@ -20,6 +20,12 @@ export function buildAdminOriginUrl(requestUrl) {
   return upstreamUrl;
 }
 
+export function buildCanonicalAdminUrl(requestUrl) {
+  const canonicalUrl = new URL(requestUrl);
+  canonicalUrl.pathname = "/admin";
+  return canonicalUrl;
+}
+
 export function normalizeUnsafeOrigin(headers, method) {
   if (SAFE_METHODS.has(method.toUpperCase())) {
     return;
@@ -54,6 +60,10 @@ export default {
 
     if (incomingUrl.hostname !== SITE_HOST || !isAdminPath(incomingUrl.pathname)) {
       return new Response("Not found", { status: 404 });
+    }
+
+    if (incomingUrl.pathname === "/admin/") {
+      return Response.redirect(buildCanonicalAdminUrl(incomingUrl), 308);
     }
 
     if (!env?.ADMIN_PROXY_SECRET) {
