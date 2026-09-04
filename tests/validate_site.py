@@ -27,9 +27,10 @@ assert "<title>Danny's Designs" in home, "Home page must have branded metadata"
 assert 'href="/admin/"' in home, "Home page must link to the admin route"
 assert 'name="robots" content="noindex, nofollow"' in admin, "Admin must be noindex"
 assert "CaptainButters22/DannysDesigns" in admin, "Admin must link to this repository"
+assert "fallback page" in admin, "Admin fallback behavior must be explicit"
+assert "https://api.dannysdesigns.com/admin" in admin, "Admin fallback must link to the origin"
 assert cname.strip() == "dannysdesigns.com", "CNAME must use the requested domain"
 assert "Disallow: /admin/" in robots, "robots.txt must exclude admin"
 assert "/admin" not in sitemap, "Sitemap must exclude admin"
 
-print(f"Validated {len(required_files)} files and 7 site requirements.")
-
+print(f"Validated {len(required_files)} files and 9 site requirements.")
