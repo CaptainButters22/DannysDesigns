@@ -63,14 +63,18 @@ The checked-in `worker/wrangler.toml` creates this narrowly scoped route during
 deployment. Do not add a catch-all `dannysdesigns.com/*` route: that would put
 the Worker in front of the rest of the GitHub Pages site.
 
-The Worker sends the server-required `X-Admin-Proxy-Secret`,
-`X-Forwarded-Host: dannysdesigns.com`, and `X-Forwarded-Proto: https` headers.
+The Worker sends the server-required `X-Admin-Proxy-Secret` and
+`X-Forwarded-Proto: https` headers.
 An exact `/admin/` request receives a same-origin `308` redirect to `/admin`
 with its query string preserved; nested paths such as `/admin/users/` continue
 to proxy unchanged.
-For unsafe methods it canonicalizes an equivalent same-origin `Origin` header
-to `https://dannysdesigns.com`; missing, malformed, or cross-origin values are
-left unchanged so the Flask server rejects them.
+For unsafe methods, the Worker sets the private
+`X-Admin-Public-Origin: https://dannysdesigns.com` attestation only when the
+browser sends that exact `Origin`, or when `Origin` is absent and
+`Sec-Fetch-Site` is exactly `same-origin`. It removes every client-supplied
+attestation first. Cross-origin, malformed, or unclassified unsafe requests
+receive `403` at the edge and are never forwarded. Safe methods are forwarded
+without the attestation.
 
 ### Protect the admin console with Cloudflare Access
 

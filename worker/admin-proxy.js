@@ -26,32 +26,24 @@ export function buildCanonicalAdminUrl(requestUrl) {
   return canonicalUrl;
 }
 
-export function normalizeUnsafeOrigin(headers, method) {
+export function attestUnsafeRequest(headers, method) {
+  headers.delete("X-Admin-Public-Origin");
+
   if (SAFE_METHODS.has(method.toUpperCase())) {
-    return;
+    return true;
   }
 
   const origin = headers.get("Origin");
-  if (!origin) {
-    return;
-  }
-
-  try {
-    const parsedOrigin = new URL(origin);
-    const isOriginOnly =
-      origin === origin.trim() &&
-      parsedOrigin.pathname === "/" &&
-      !parsedOrigin.search &&
-      !parsedOrigin.hash &&
-      !parsedOrigin.username &&
-      !parsedOrigin.password;
-
-    if (isOriginOnly && parsedOrigin.origin === SITE_ORIGIN) {
-      headers.set("Origin", SITE_ORIGIN);
+  if (origin) {
+    if (origin !== SITE_ORIGIN) {
+      return false;
     }
-  } catch {
-    // Preserve malformed origins so the server rejects them.
+  } else if (headers.get("Sec-Fetch-Site") !== "same-origin") {
+    return false;
   }
+
+  headers.set("X-Admin-Public-Origin", SITE_ORIGIN);
+  return true;
 }
 
 export default {
@@ -75,9 +67,10 @@ export default {
       "X-Admin-Proxy-Secret",
       env.ADMIN_PROXY_SECRET,
     );
-    upstreamRequest.headers.set("X-Forwarded-Host", SITE_HOST);
     upstreamRequest.headers.set("X-Forwarded-Proto", "https");
-    normalizeUnsafeOrigin(upstreamRequest.headers, request.method);
+    if (!attestUnsafeRequest(upstreamRequest.headers, request.method)) {
+      return new Response("Forbidden", { status: 403 });
+    }
 
     return fetch(upstreamRequest, { redirect: "manual" });
   },

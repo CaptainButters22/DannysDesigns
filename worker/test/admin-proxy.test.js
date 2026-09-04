@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import worker, {
+  attestUnsafeRequest,
   buildAdminOriginUrl,
   buildCanonicalAdminUrl,
   isAdminPath,
-  normalizeUnsafeOrigin,
 } from "../admin-proxy.js";
 
 test("matches only the admin path boundary", () => {
@@ -59,33 +59,65 @@ test("refuses to construct an upstream URL for non-admin paths", () => {
   );
 });
 
-test("normalizes only equivalent origins on unsafe methods", () => {
-  const equivalentOrigin = new Headers({
-    Origin: "https://dannysdesigns.com:443",
+test("attests an unsafe request with an exact public Origin", () => {
+  const headers = new Headers({
+    Origin: "https://dannysdesigns.com",
+    "X-Admin-Public-Origin": "https://attacker.example",
   });
-  normalizeUnsafeOrigin(equivalentOrigin, "POST");
-  assert.equal(equivalentOrigin.get("origin"), "https://dannysdesigns.com");
 
-  const hostileOrigin = new Headers({ Origin: "https://attacker.example" });
-  normalizeUnsafeOrigin(hostileOrigin, "DELETE");
-  assert.equal(hostileOrigin.get("origin"), "https://attacker.example");
-
-  const originWithPath = new Headers({
-    Origin: "https://dannysdesigns.com/admin",
-  });
-  normalizeUnsafeOrigin(originWithPath, "POST");
-  assert.equal(originWithPath.get("origin"), "https://dannysdesigns.com/admin");
-
-  const missingOrigin = new Headers();
-  normalizeUnsafeOrigin(missingOrigin, "PATCH");
-  assert.equal(missingOrigin.has("origin"), false);
-
-  const safeRequestOrigin = new Headers({
-    Origin: "https://dannysdesigns.com:443",
-  });
-  normalizeUnsafeOrigin(safeRequestOrigin, "GET");
+  assert.equal(attestUnsafeRequest(headers, "POST"), true);
   assert.equal(
-    safeRequestOrigin.get("origin"),
+    headers.get("x-admin-public-origin"),
+    "https://dannysdesigns.com",
+  );
+});
+
+test("attests an unsafe request using same-origin Fetch Metadata", () => {
+  const headers = new Headers({
+    "Sec-Fetch-Site": "same-origin",
+  });
+
+  assert.equal(attestUnsafeRequest(headers, "PATCH"), true);
+  assert.equal(
+    headers.get("x-admin-public-origin"),
+    "https://dannysdesigns.com",
+  );
+});
+
+test("rejects unsafe cross-site, malformed, and unknown requests", () => {
+  for (const headers of [
+    new Headers({
+      Origin: "https://attacker.example",
+      "Sec-Fetch-Site": "same-origin",
+      "X-Admin-Public-Origin": "https://dannysdesigns.com",
+    }),
+    new Headers({ Origin: "not-an-origin" }),
+    new Headers({ "Sec-Fetch-Site": "cross-site" }),
+    new Headers(),
+  ]) {
+    assert.equal(attestUnsafeRequest(headers, "DELETE"), false);
+    assert.equal(headers.has("x-admin-public-origin"), false);
+  }
+});
+
+test("removes client attestation from safe methods", () => {
+  const headers = new Headers({
+    "X-Admin-Public-Origin": "https://dannysdesigns.com",
+  });
+
+  assert.equal(attestUnsafeRequest(headers, "GET"), true);
+  assert.equal(headers.has("x-admin-public-origin"), false);
+});
+
+test("does not accept a non-exact same-origin value", () => {
+  const headers = new Headers({
+    Origin: "https://dannysdesigns.com:443",
+  });
+
+  assert.equal(attestUnsafeRequest(headers, "POST"), false);
+  assert.equal(headers.has("x-admin-public-origin"), false);
+  assert.equal(
+    headers.get("origin"),
     "https://dannysdesigns.com:443",
   );
 });
@@ -115,7 +147,8 @@ test("proxy preserves request and response semantics", async () => {
           Authorization: "Bearer test-token",
           Cookie: "existing=value",
           "Content-Type": "application/x-www-form-urlencoded",
-          Origin: "https://dannysdesigns.com:443",
+          Origin: "https://dannysdesigns.com",
+          "X-Admin-Public-Origin": "https://attacker.example",
           "X-Admin-Proxy-Secret": "client-supplied-value",
         },
         body: "username=maintainer",
@@ -135,9 +168,13 @@ test("proxy preserves request and response semantics", async () => {
       capturedRequest.headers.get("x-admin-proxy-secret"),
       "worker-secret",
     );
-    assert.equal(capturedRequest.headers.get("x-forwarded-host"), "dannysdesigns.com");
+    assert.equal(capturedRequest.headers.has("x-forwarded-host"), false);
     assert.equal(capturedRequest.headers.get("x-forwarded-proto"), "https");
     assert.equal(capturedRequest.headers.get("origin"), "https://dannysdesigns.com");
+    assert.equal(
+      capturedRequest.headers.get("x-admin-public-origin"),
+      "https://dannysdesigns.com",
+    );
     assert.equal(capturedOptions.redirect, "manual");
     assert.equal(response.status, 303);
     assert.equal(response.headers.get("location"), "/admin/dashboard");
@@ -186,20 +223,59 @@ test("redirects exact trailing-slash admin URL before proxying", async () => {
 
 test("continues to proxy nested admin paths", async () => {
   const originalFetch = globalThis.fetch;
-  let capturedUrl;
+  let capturedRequest;
   globalThis.fetch = async (request) => {
-    capturedUrl = request.url;
+    capturedRequest = request;
     return new Response("proxied");
   };
 
   try {
     const response = await worker.fetch(
-      new Request("https://dannysdesigns.com/admin/users/?page=2"),
+      new Request("https://dannysdesigns.com/admin/users/?page=2", {
+        headers: {
+          "X-Admin-Public-Origin": "https://dannysdesigns.com",
+        },
+      }),
       { ADMIN_PROXY_SECRET: "worker-secret" },
     );
 
-    assert.equal(capturedUrl, "https://api.dannysdesigns.com/admin/users/?page=2");
+    assert.equal(
+      capturedRequest.url,
+      "https://api.dannysdesigns.com/admin/users/?page=2",
+    );
+    assert.equal(
+      capturedRequest.headers.has("x-admin-public-origin"),
+      false,
+    );
     assert.equal(await response.text(), "proxied");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("rejects an unsafe request before it reaches the origin", async () => {
+  const originalFetch = globalThis.fetch;
+  let fetchCalled = false;
+  globalThis.fetch = async () => {
+    fetchCalled = true;
+    return new Response();
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://dannysdesigns.com/admin/login", {
+        method: "POST",
+        headers: {
+          Origin: "https://attacker.example",
+          "X-Admin-Public-Origin": "https://dannysdesigns.com",
+        },
+        body: "username=attacker",
+      }),
+      { ADMIN_PROXY_SECRET: "worker-secret" },
+    );
+
+    assert.equal(response.status, 403);
+    assert.equal(fetchCalled, false);
   } finally {
     globalThis.fetch = originalFetch;
   }
