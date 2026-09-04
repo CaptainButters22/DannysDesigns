@@ -64,6 +64,9 @@ the Worker in front of the rest of the GitHub Pages site.
 
 The Worker sends the server-required `X-Admin-Proxy-Secret`,
 `X-Forwarded-Host: dannysdesigns.com`, and `X-Forwarded-Proto: https` headers.
+An exact `/admin/` request receives a same-origin `308` redirect to `/admin`
+with its query string preserved; nested paths such as `/admin/users/` continue
+to proxy unchanged.
 For unsafe methods it canonicalizes an equivalent same-origin `Origin` header
 to `https://dannysdesigns.com`; missing, malformed, or cross-origin values are
 left unchanged so the Flask server rejects them.
