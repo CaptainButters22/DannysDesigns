@@ -22,8 +22,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - run: python scripts/build.py
       - run: python tests/validate_site.py
+      - run: npm test
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist

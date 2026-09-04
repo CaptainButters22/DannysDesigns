@@ -1,0 +1,12 @@
+name = "dannys-designs-admin-proxy"
+main = "admin-proxy.js"
+compatibility_date = "2026-09-04"
+workers_dev = false
+
+[[routes]]
+pattern = "dannysdesigns.com/admin"
+zone_name = "dannysdesigns.com"
+
+[[routes]]
+pattern = "dannysdesigns.com/admin/*"
+zone_name = "dannysdesigns.com"

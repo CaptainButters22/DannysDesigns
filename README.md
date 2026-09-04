@@ -17,4 +17,56 @@ python scripts/build.py
 python tests/validate_site.py
 ```
 
-The production-ready site is generated in `dist/`. The `/admin/` page is intentionally excluded from search indexing and directs authenticated maintainers to the repository and Pages settings.
+The production-ready site is generated in `dist/`. The `/admin/` page is intentionally excluded from search indexing.
+
+## Admin edge proxy
+
+The Worker in `worker/` proxies only `https://dannysdesigns.com/admin` and
+`https://dannysdesigns.com/admin/*` to the existing tunnel at
+`https://api.dannysdesigns.com`. All other paths continue directly to GitHub
+Pages because they are outside the Worker's route bindings. The proxy keeps the
+HTTP method, query string, body, headers, redirect response, cookies, and status
+code. It has no secrets or environment variables.
+
+Run the route and URL tests with:
+
+```bash
+npm test
+```
+
+### Deploy the Worker
+
+1. In Cloudflare, confirm `dannysdesigns.com` is an active zone and its Pages
+   DNS records are proxied through Cloudflare.
+2. Authenticate Wrangler with `npx wrangler login`, or set a local/CI
+   `CLOUDFLARE_API_TOKEN` that can edit Workers Scripts and Workers Routes for
+   the zone. Do not commit the token.
+3. Run `npm ci`, then `npm run deploy:worker`.
+4. In **Workers & Pages > dannys-designs-admin-proxy > Settings > Domains &
+   Routes**, verify both routes exist:
+   `dannysdesigns.com/admin` and `dannysdesigns.com/admin/*`.
+5. Request `/`, `/assets/styles.css`, and `/admin`; the first two should remain
+   GitHub Pages responses, while `/admin` should return the Flask console.
+
+The checked-in `worker/wrangler.toml` creates the two route bindings during
+deployment. Do not add a catch-all `dannysdesigns.com/*` route: that would put
+the Worker in front of the rest of the GitHub Pages site.
+
+### Protect the admin console with Cloudflare Access
+
+Use Access as an additional authentication layer for both public admin entry
+points:
+
+1. In **Zero Trust > Access > Applications**, add one self-hosted application
+   with public-hostname entries for `dannysdesigns.com/admin`,
+   `dannysdesigns.com/admin/*`, `api.dannysdesigns.com/admin`, and
+   `api.dannysdesigns.com/admin/*`. Keeping both hostnames in one application
+   lets the Worker's forwarded Access token use the same application audience.
+2. Add an **Allow** policy limited to the maintainer identities or identity
+   provider group, with short session duration and MFA.
+3. Leave `api.dannysdesigns.com/health` and every other public API path outside
+   these Access applications. Do not create an application for
+   `api.dannysdesigns.com/*`.
+
+No Access credentials belong in this repository. Cloudflare enforces the
+policies before requests reach the Worker or tunnel.

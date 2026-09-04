@@ -1,0 +1,12 @@
+{
+  "name": "dannys-designs-edge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test worker/test/*.test.js",
+    "deploy:worker": "wrangler deploy --config worker/wrangler.toml"
+  },
+  "devDependencies": {
+    "wrangler": "4.129.0"
+  }
+}
