@@ -187,6 +187,49 @@ test("proxy preserves request and response semantics", async () => {
   }
 });
 
+test("preserves multiple Set-Cookie headers across a manual redirect", async () => {
+  const originalFetch = globalThis.fetch;
+  let capturedRequest;
+
+  globalThis.fetch = async (request) => {
+    capturedRequest = request;
+    const headers = new Headers({ Location: "/admin/dashboard" });
+    headers.append(
+      "Set-Cookie",
+      "website_data_session=signed-value; Secure; HttpOnly; Path=/; SameSite=Lax",
+    );
+    headers.append(
+      "Set-Cookie",
+      "admin_preference=compact; Secure; Path=/admin; SameSite=Lax",
+    );
+    return new Response(null, { status: 302, headers });
+  };
+
+  try {
+    const response = await worker.fetch(
+      new Request("https://dannysdesigns.com/admin", {
+        method: "POST",
+        headers: {
+          Cookie: "csrf_session=existing",
+          Origin: "https://dannysdesigns.com",
+        },
+        body: "csrf_token=test-token",
+      }),
+      { ADMIN_PROXY_SECRET: "worker-secret" },
+    );
+
+    assert.equal(capturedRequest.headers.get("cookie"), "csrf_session=existing");
+    assert.equal(response.status, 302);
+    assert.equal(response.headers.get("location"), "/admin/dashboard");
+    assert.deepEqual(response.headers.getSetCookie(), [
+      "website_data_session=signed-value; Secure; HttpOnly; Path=/; SameSite=Lax",
+      "admin_preference=compact; Secure; Path=/admin; SameSite=Lax",
+    ]);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("fails closed when the Worker secret is unavailable", async () => {
   const response = await worker.fetch(
     new Request("https://dannysdesigns.com/admin"),
