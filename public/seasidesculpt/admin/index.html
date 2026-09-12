@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Studio Admin | Seaside Sculpt</title>
+  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="admin.css">
+</head>
+<body class="admin-shell">
+  <aside class="admin-sidebar">
+    <a class="brand" href="../"><span class="brand-mark" aria-hidden="true">~</span>Seaside Sculpt</a>
+    <p class="admin-label">Studio admin</p>
+    <nav class="admin-nav" aria-label="Admin sections">
+      <button class="active" data-panel="overview">Overview</button>
+      <button data-panel="schedule">Schedule</button>
+      <button data-panel="classes">Classes</button>
+      <button data-panel="pricing">Pricing</button>
+      <button data-panel="studio">Studio &amp; team</button>
+    </nav>
+    <a class="admin-site-link" href="../">View public site ↗</a>
+  </aside>
+  <main class="admin-main">
+    <header class="admin-header">
+      <div><p class="eyebrow">Seaside Sculpt</p><h1 id="panel-title">Good morning, Claire.</h1></div>
+      <div class="admin-actions"><span class="draft-status">Draft workspace</span><button class="staff-button" data-preview>Preview changes</button><button class="button" data-publish>Publish changes</button></div>
+    </header>
+    <p class="prototype-note">Prototype dashboard: edits demonstrate the future workflow and are not saved or published.</p>
+
+    <section class="admin-panel" data-panel-content="overview">
+      <div class="admin-metrics">
+        <article><p>Today's classes</p><strong>5</strong><span>2 spots opening next</span></article>
+        <article><p>Reservations</p><strong>54</strong><span>Across today's schedule</span></article>
+        <article><p>Average capacity</p><strong>76%</strong><span>Up 8% this week</span></article>
+        <article><p>Draft changes</p><strong class="draft-count">0</strong><span>Ready when you are</span></article>
+      </div>
+      <div class="admin-grid">
+        <section class="admin-card"><div class="card-heading"><div><p class="eyebrow">Next up</p><h2>Power Cycle</h2></div><span class="status">5:30 PM</span></div><p class="lede">Alex · 17 of 20 bikes reserved</p><div class="progress"><span style="width:85%"></span></div><button class="text-button" data-open="schedule">Manage today's schedule →</button></section>
+        <section class="admin-card"><div class="card-heading"><div><p class="eyebrow">Publishing</p><h2>Your site is current</h2></div><span class="status">Live</span></div><p class="lede">Future updates will be saved as drafts until you choose Publish changes.</p><button class="text-button" data-preview>Open site preview →</button></section>
+      </div>
+      <section class="admin-card"><div class="card-heading"><div><p class="eyebrow">Quick actions</p><h2>Keep the studio moving</h2></div></div><div class="quick-actions"><button data-open="schedule">Add a class</button><button data-open="pricing">Update pricing</button><button data-open="studio">Edit studio details</button></div></section>
+    </section>
+
+    <section class="admin-panel" data-panel-content="schedule" hidden>
+      <div class="section-heading"><div><p class="eyebrow">Schedule</p><h2>Week of August 17</h2></div><button class="button" data-edit>Add a class</button></div>
+      <div class="view-switcher"><button class="active" data-schedule-view="calendar">Calendar</button><button data-schedule-view="table">Table</button></div>
+      <div class="calendar-view">
+        <div class="calendar"><div class="calendar-head">Mon <strong>17</strong></div><div class="calendar-head">Tue <strong>18</strong></div><div class="calendar-head">Wed <strong>19</strong></div><div class="calendar-head">Thu <strong>20</strong></div><div class="calendar-head">Fri <strong>21</strong></div><article><time>6:00 AM</time><strong>Sunrise Cycle</strong><span>Maya · 16/20</span></article><article class="barre"><time>8:30 AM</time><strong>Barre Sculpt</strong><span>Claire · 12/20</span></article><article class="yoga"><time>10:00 AM</time><strong>Slow Flow Yoga</strong><span>Jordan · 14/20</span></article><article><time>5:30 PM</time><strong>Power Cycle</strong><span>Alex · 17/20</span></article><article class="barre"><time>6:30 PM</time><strong>Barre + Core</strong><span>Claire · 10/20</span></article></div>
+      </div>
+      <div class="table-view" hidden><table class="staff-table"><thead><tr><th>Time</th><th>Class</th><th>Instructor</th><th>Capacity</th><th></th></tr></thead><tbody><tr><td>6:00 AM</td><td>Sunrise Cycle</td><td>Maya</td><td>16 / 20</td><td><button class="staff-button" data-edit>Edit</button></td></tr><tr><td>8:30 AM</td><td>Barre Sculpt</td><td>Claire</td><td>12 / 20</td><td><button class="staff-button" data-edit>Edit</button></td></tr><tr><td>10:00 AM</td><td>Slow Flow Yoga</td><td>Jordan</td><td>14 / 20</td><td><button class="staff-button" data-edit>Edit</button></td></tr></tbody></table></div>
+    </section>
+
+    <section class="admin-panel" data-panel-content="classes" hidden>
+      <div class="section-heading"><div><p class="eyebrow">Class library</p><h2>Define your offerings</h2></div><button class="button" data-edit>Add class type</button></div>
+      <div class="editor-layout"><section class="admin-card"><h3>Cycle</h3><p>45 minutes · Cardio</p><p class="lede">High-energy rides built around great playlists, smart intervals, and your own pace.</p><button class="text-button" data-edit>Edit class details →</button></section><section class="admin-card"><h3>Barre + Sculpt</h3><p>50 minutes · Strength</p><p class="lede">Low-impact, full-body strength work with weights, bands, and the barre.</p><button class="text-button" data-edit>Edit class details →</button></section><section class="admin-card"><h3>Yoga</h3><p>60 minutes · Mobility</p><p class="lede">Breath-led practices for balance, mobility, and mindful strength.</p><button class="text-button" data-edit>Edit class details →</button></section></div>
+    </section>
+
+    <section class="admin-panel" data-panel-content="pricing" hidden>
+      <div class="section-heading"><div><p class="eyebrow">Pricing</p><h2>Passes and memberships</h2></div><button class="button" data-edit>Add offer</button></div>
+      <div class="editor-layout"><section class="admin-card"><h3>Drop-in</h3><strong class="admin-price">$28</strong><p>One class credit · Valid 30 days</p><button class="text-button" data-edit>Edit offer →</button></section><section class="admin-card featured-card"><span class="badge">Most loved</span><h3>10-Class Pack</h3><strong class="admin-price">$220</strong><p>10 credits · Valid 6 months</p><button class="text-button" data-edit>Edit offer →</button></section><section class="admin-card"><h3>Unlimited</h3><strong class="admin-price">$159<span>/month</span></strong><p>Unlimited studio classes</p><button class="text-button" data-edit>Edit offer →</button></section></div>
+    </section>
+
+    <section class="admin-panel" data-panel-content="studio" hidden>
+      <div class="section-heading"><div><p class="eyebrow">Studio settings</p><h2>Your business details</h2></div><button class="button" data-edit>Save draft</button></div>
+      <form class="settings-form"><label>Studio name<input value="Seaside Sculpt"></label><label>Phone<input value="(401) 555-0198"></label><label>Email<input value="hello@seasidesculpt.com"></label><label>Address<input value="883 Boston Neck Road, Narragansett, RI 02882"></label><label class="full-width">Studio message<textarea>Movement, connection, and a little more joy in every day.</textarea></label></form>
+      <section class="admin-card team-card"><div class="card-heading"><h3>Team</h3><button class="staff-button" data-edit>Add team member</button></div><div class="team-list"><p><strong>Maya</strong><span>Cycle instructor</span><button class="text-button" data-edit>Edit</button></p><p><strong>Claire</strong><span>Barre instructor · Studio manager</span><button class="text-button" data-edit>Edit</button></p><p><strong>Jordan</strong><span>Yoga instructor</span><button class="text-button" data-edit>Edit</button></p></div></section>
+    </section>
+  </main>
+  <div class="toast" role="status"></div>
+  <script src="../app.js"></script><script src="admin.js"></script>
+</body>
+</html>
