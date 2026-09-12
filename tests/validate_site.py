@@ -20,6 +20,9 @@ required_files = [
     "seasidesculpt/closeout/index.html",
     "seasidesculpt/styles.css",
     "seasidesculpt/app.js",
+    "seasidesculpt/admin/index.html",
+    "seasidesculpt/admin/admin.css",
+    "seasidesculpt/admin/admin.js",
 ]
 
 for relative_path in required_files:
@@ -32,6 +35,7 @@ robots = (dist / "robots.txt").read_text(encoding="utf-8")
 sitemap = (dist / "sitemap.xml").read_text(encoding="utf-8")
 seaside_home = (dist / "seasidesculpt/index.html").read_text(encoding="utf-8")
 seaside_schedule = (dist / "seasidesculpt/schedule/index.html").read_text(encoding="utf-8")
+seaside_admin = (dist / "seasidesculpt/admin/index.html").read_text(encoding="utf-8")
 
 assert "<title>Danny's Designs" in home, "Home page must have branded metadata"
 assert 'href="/admin/"' in home, "Home page must link to the admin route"
@@ -47,5 +51,8 @@ assert "/seasidesculpt" not in sitemap, "Sitemap must exclude the template previ
 assert 'name="robots" content="noindex, nofollow"' in seaside_home, "Template home must be noindex"
 assert 'href="schedule/"' in seaside_home, "Template home must link to the schedule route"
 assert 'data-book' in seaside_schedule, "Schedule must retain booking controls"
+assert 'name="robots" content="noindex, nofollow"' in seaside_admin, "Template admin must be noindex"
+assert 'data-panel="schedule"' in seaside_admin, "Template admin must include schedule editing"
+assert 'data-panel="pricing"' in seaside_admin, "Template admin must include pricing editing"
 
 print(f"Validated {len(required_files)} files and 9 site requirements.")
