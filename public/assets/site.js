@@ -15,9 +15,3 @@ navigation?.addEventListener("click", () => {
 document.querySelectorAll("[data-year]").forEach((element) => {
   element.textContent = String(new Date().getFullYear());
 });
-
-document.querySelector("[data-quote-form]")?.addEventListener("submit", (event) => {
-  event.preventDefault();
-  const message = event.currentTarget.querySelector(".dd-form-note");
-  message.textContent = "Thanks for sharing. Email us at hello@dannysdesigns.com to start your project.";
-});
