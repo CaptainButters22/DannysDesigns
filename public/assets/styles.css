@@ -123,8 +123,18 @@ h2 { margin-bottom: 1.25rem; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spaci
   letter-spacing: .08em;
   text-transform: uppercase;
 }
-.card-shirt { left: 7%; top: 6%; transform: rotate(-6deg); }
-.card-mug { right: 4%; bottom: 4%; transform: rotate(7deg); }
+.card-browser { left: 7%; top: 6%; width: 270px; transform: rotate(-6deg); }
+.card-notes { right: 4%; bottom: 4%; width: 205px; min-height: 230px; transform: rotate(7deg); }
+.browser-bar { display: flex; gap: 5px; padding-bottom: .7rem; border-bottom: 2px solid var(--ink); }
+.browser-bar span { width: 9px; height: 9px; border-radius: 50%; background: var(--coral); }
+.browser-bar span:nth-child(2) { background: var(--gold); }
+.browser-bar span:nth-child(3) { background: var(--teal); }
+.browser-copy { padding: 1.4rem .5rem .4rem; }
+.browser-copy small { font-size: .62rem; font-weight: 700; letter-spacing: .12em; }
+.browser-copy strong { display: block; margin-top: .7rem; font: 1.8rem/1 var(--display); }
+.browser-copy i { display: block; width: 70%; height: 12px; margin-top: 1rem; border-radius: 20px; background: var(--coral); }
+.card-notes p { margin: 1.3rem 0 .4rem; font: 1.4rem/1.15 var(--display); font-style: italic; }
+.card-notes b { color: var(--coral); font-size: 2rem; }
 .hand-note {
   position: absolute;
   right: 1%;
@@ -174,6 +184,7 @@ h2 { margin-bottom: 1.25rem; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spaci
 .shirt-art { clip-path: polygon(25% 7%, 40% 17%, 60% 17%, 75% 7%, 100% 25%, 84% 47%, 72% 41%, 72% 100%, 28% 100%, 28% 41%, 16% 47%, 0 25%); }
 .mug-art { aspect-ratio: 1.15; border-radius: 4px 4px 25px 25px; transform: rotate(-4deg); }
 .invite-art { aspect-ratio: .8; transform: rotate(3deg); }
+.site-art { border-radius: 50% 45% 55% 40%; font-size: 3rem; font-style: normal; }
 .custom {
   width: 100%;
   max-width: none;
@@ -206,6 +217,13 @@ h2 { margin-bottom: 1.25rem; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spaci
 .button-light { margin-top: 1rem; border-color: var(--white); background: var(--white); color: var(--ink); }
 .story { display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; }
 .story-copy { font-size: 1.05rem; }
+.project-feature { display: grid; grid-template-columns: 1.1fr .9fr; gap: 4rem; align-items: center; padding: 2rem; border: 2px solid var(--ink); border-radius: 16px; background: var(--white); box-shadow: 7px 7px 0 var(--ink); }
+.project-browser { overflow: hidden; padding: 1.1rem; border: 2px solid var(--ink); border-radius: 8px; background: var(--paper); }
+.project-screen { min-height: 300px; margin-top: .8rem; padding: 2.2rem; display: flex; flex-direction: column; justify-content: end; background: linear-gradient(90deg, rgba(11,43,48,.78), rgba(11,43,48,.25)), url("https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1000&q=85") center/cover; color: white; }
+.project-screen p { margin: 0 0 auto; font: 1.2rem var(--display); }
+.project-screen strong { font: 2.5rem/1 var(--display); }
+.project-screen small { margin-top: 1rem; text-transform: uppercase; letter-spacing: .1em; }
+.project-feature h3 { font: 2rem/1.05 var(--display); }
 .dropcap::first-letter { float: left; padding: .1rem .5rem 0 0; color: var(--coral); font-family: var(--display); font-size: 4.5rem; line-height: .7; }
 .cta { width: min(1050px, calc(100% - 40px)); margin: 2rem auto 7rem; padding: 5rem 2rem; border: 3px solid var(--ink); border-radius: 50% 45% 48% 42%; background: var(--gold); text-align: center; box-shadow: 9px 10px 0 var(--ink); }
 .cta .eyebrow { color: var(--ink); }
@@ -280,7 +298,7 @@ h2 { margin-bottom: 1.25rem; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spaci
   .hero-art { min-height: 470px; margin-top: 2rem; }
   .section-heading, .custom, .story { grid-template-columns: 1fr; }
   .section-heading { gap: 1rem; }
-  .collection-grid { grid-template-columns: 1fr; }
+  .collection-grid, .project-feature { grid-template-columns: 1fr; }
   .collection-card { min-height: 390px; }
   .custom { gap: 1rem; }
   .site-footer { grid-template-columns: 1fr; }
@@ -296,6 +314,9 @@ h2 { margin-bottom: 1.25rem; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spaci
   .hero-actions { align-items: flex-start; flex-direction: column; }
   .hero-art { min-height: 385px; }
   .product-card { width: 165px; }
+  .card-browser { width: 200px; }
+  .card-notes { width: 155px; min-height: 190px; }
+  .browser-copy strong { font-size: 1.3rem; }
   .hand-note { width: 90px; font-size: 1.15rem; }
   .section { padding-block: 5rem; }
   .custom-art { min-height: 320px; gap: .25rem; }
@@ -309,4 +330,3 @@ h2 { margin-bottom: 1.25rem; font-size: clamp(2.5rem, 5vw, 4.5rem); letter-spaci
   .marquee div { animation: none; }
   *, *::before, *::after { transition: none !important; }
 }
-
