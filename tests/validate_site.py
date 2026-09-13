@@ -39,7 +39,8 @@ seaside_admin = (dist / "seasidesculpt/admin/index.html").read_text(encoding="ut
 
 assert "<title>Danny's Designs" in home, "Home page must have branded metadata"
 assert "Custom websites" in home, "Home page must describe web-design services"
-assert "/seasidesculpt/" in home, "Home page must feature the client-preview work"
+assert "bucketandthebean.com" in home, "Home page must feature the portfolio project"
+assert "Request a quote" in home, "Home page must include the primary inquiry path"
 assert 'href="/admin/"' in home, "Home page must link to the admin route"
 assert 'name="robots" content="noindex, nofollow"' in admin, "Admin must be noindex"
 assert "CaptainButters22/DannysDesigns" in admin, "Admin must link to this repository"
