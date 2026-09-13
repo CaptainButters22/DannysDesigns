@@ -38,6 +38,8 @@ seaside_schedule = (dist / "seasidesculpt/schedule/index.html").read_text(encodi
 seaside_admin = (dist / "seasidesculpt/admin/index.html").read_text(encoding="utf-8")
 
 assert "<title>Danny's Designs" in home, "Home page must have branded metadata"
+assert "Custom websites" in home, "Home page must describe web-design services"
+assert "/seasidesculpt/" in home, "Home page must feature the client-preview work"
 assert 'href="/admin/"' in home, "Home page must link to the admin route"
 assert 'name="robots" content="noindex, nofollow"' in admin, "Admin must be noindex"
 assert "CaptainButters22/DannysDesigns" in admin, "Admin must link to this repository"
